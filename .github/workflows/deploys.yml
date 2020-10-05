@@ -16,6 +16,7 @@ jobs:
           function_id: ${{ secrets.FUNCTION_ID }}
           runtime: 'golang114'
           entrypoint: 'main.Handler'
+          environment: DEBUG=false
           memory: '128'
           execution_timeout: '2'
           service_account: ${{ secrets.SERVICE_ACCOUNT }}
