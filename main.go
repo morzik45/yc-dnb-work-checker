@@ -1,25 +1,28 @@
 package main
 
-import "log"
+import (
+	"encoding/json"
+	"log"
+)
 
 type Response struct {
 	StatusCode int `json:"statusCode"`
 }
 
-type MessageStruct struct {
-	Body Work `json:"body"`
-}
-
-type DetailsStruct struct {
-	Message MessageStruct `json:"message"`
-}
-
 type Message struct {
-	Details DetailsStruct `json:"details"`
+	Body string `json:"body"`
+}
+
+type Details struct {
+	Message Message `json:"message"`
+}
+
+type Item struct {
+	Details Details `json:"details"`
 }
 
 type Request struct {
-	Messages []Message `json:"messages"`
+	Messages []Item `json:"messages"`
 }
 
 type Work struct {
@@ -31,8 +34,14 @@ type Work struct {
 
 func Handler(messages Request) (*Response, error) {
 	if len(messages.Messages) != 0 {
-		log.Println(messages.Messages[0].Details.Message.Body)
-		log.Println(messages.Messages[0].Details.Message.Body.UID)
+		w := new(Work)
+		json.Unmarshal([]byte(messages.Messages[0].Details.Message.Body), &w)
+
+		log.Println(w.UID)
+		log.Println(w.WID)
+		log.Println(w.Token)
+		log.Println(w.FileID)
+
 	} else {
 		log.Println("Empty messages list")
 	}
