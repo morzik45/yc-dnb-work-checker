@@ -18,7 +18,11 @@ type Message struct {
 	Details DetailsStruct `json:"details"`
 }
 
-func Handler(messages string) (*Response, error) {
+type Request struct {
+	Messages []Message `json:"messages"`
+}
+
+func Handler(messages Request) (*Response, error) {
 	log.Println(messages)
 	return &Response{StatusCode: 200}, nil
 }
