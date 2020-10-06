@@ -7,7 +7,7 @@ type Response struct {
 }
 
 type MessageStruct struct {
-	Body string `json:"body"`
+	Body Work `json:"body"`
 }
 
 type DetailsStruct struct {
@@ -22,7 +22,19 @@ type Request struct {
 	Messages []Message `json:"messages"`
 }
 
+type Work struct {
+	WID    string `json:"wid"`
+	UID    int    `json:"uid"`
+	Token  string `json:"token"`
+	FileID string `json:"file_id"`
+}
+
 func Handler(messages Request) (*Response, error) {
-	log.Println(messages)
+	if len(messages.Messages) != 0 {
+		log.Println(messages.Messages[0].Details.Message.Body)
+		log.Println(messages.Messages[0].Details.Message.Body.UID)
+	} else {
+		log.Println("Empty messages list")
+	}
 	return &Response{StatusCode: 200}, nil
 }
