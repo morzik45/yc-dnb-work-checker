@@ -13,9 +13,16 @@ func Handler(messages Request) (*Response, error) {
 		if err != nil {
 			log.Println("Ошибка при разборе входящих данных:", err)
 		}
-		if sendMessage(w.UID, w.Token, fmt.Sprintf("UID: %d\nWID: %s\nToken: %s\nFileID: %s", w.UID, w.WID, w.Token, w.FileID)) != nil {
-			log.Println("Ошибка при отправке сообщения пользователю:", err)
+		if w.SetStatus() != nil {
+			log.Println("Ошибка при установке статуса:", err)
+		} else {
+
+			if sendMessage(w.UID, w.Token, fmt.Sprintf("Фото добавлено в очередь")) != nil {
+				log.Println("Ошибка при отправке сообщения пользователю:", err)
+			}
+
 		}
+
 	} else {
 		log.Println("Empty messages list")
 	}
