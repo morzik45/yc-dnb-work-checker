@@ -16,11 +16,13 @@ func Handler(messages Request) (*Response, error) {
 		if w.SetStatus() != nil {
 			log.Println("Ошибка при установке статуса:", err)
 		} else {
-
-			if sendMessage(w.UID, w.Token, fmt.Sprintf("Фото добавлено в очередь")) != nil {
-				log.Println("Ошибка при отправке сообщения пользователю:", err)
+			if w.AddNewWorkToQueue() != nil {
+				log.Println("Ошибка при добавлении в очередь:", err)
+			} else {
+				if sendMessage(w.UID, w.Token, fmt.Sprintf("Фото добавлено в очередь")) != nil {
+					log.Println("Ошибка при отправке сообщения пользователю:", err)
+				}
 			}
-
 		}
 
 	} else {
