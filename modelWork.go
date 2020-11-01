@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sqs"
@@ -135,21 +134,21 @@ func (w *Work) SetStatus() error {
 			},
 		})
 		if err != nil {
-			fmt.Println("err1")
 			return err
 		}
-		fmt.Println(c)
 		if c < 3 {
 			w.WorkStatus = 0
-			fmt.Println(0)
 			update := bson.D{
 				primitive.E{
-					Key:   "counts.count_free",
-					Value: 1,
+					Key: "$inc",
+					Value: bson.D{
+						primitive.E{
+							Key:   "counts.count_free",
+							Value: 1,
+						}},
 				}}
 			_, err := db.Update(ctx, update)
 			if err != nil {
-				fmt.Println("err2")
 				return err
 			}
 		}
