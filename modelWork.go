@@ -114,8 +114,8 @@ func (w *Work) SetStatus() error {
 		w.WorkStatus = 1
 
 	} else { // Бесплатная
-		t := time.Now().UTC()
-		rounded := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
+		//t := time.Now().UTC()
+		//rounded := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
 		c, err := wdb.CountDocuments(ctx, bson.D{
 			primitive.E{
 				Key:   "user_id",
@@ -125,13 +125,13 @@ func (w *Work) SetStatus() error {
 				Key:   "status",
 				Value: 0,
 			},
-			primitive.E{
-				Key: "time",
-				Value: primitive.E{
-					Key:   "$gt",
-					Value: rounded,
-				},
-			},
+			//primitive.E{
+			//	Key: "time",
+			//	Value: primitive.E{
+			//		Key:   "$gt",
+			//		Value: rounded,
+			//	},
+			//},
 		})
 		if err != nil {
 			return err
