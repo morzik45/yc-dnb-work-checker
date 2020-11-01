@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	dnb_mongo "yc-dnb-work-checker/dnb-mongo"
+	"yc-dnb-work-checker/telegram"
 )
 
 func Handler(messages Request) (*Response, error) {
@@ -19,7 +21,18 @@ func Handler(messages Request) (*Response, error) {
 			if w.AddNewWorkToQueue() != nil {
 				log.Println("Ошибка при добавлении в очередь:", err)
 			} else {
-				if sendMessage(w.UID, w.Token, fmt.Sprintf("Фото добавлено в очередь")) != nil {
+				db, err := dnb_mongo.NewMongoDB()
+				if err != nil {
+					log.Println(err)
+					return nil, nil
+				}
+				currentUser, err := db.GetUser(w.WID, w.Token)
+				if err != nil {
+					fmt.Println(err)
+					return nil, nil
+				}
+
+				if telegram.SendMessage(w.UID, w.Token, fmt.Sprintf("Фото добавлено в очередь %s, %d", currentUser.User.Username, currentUser.Counts.Coins)) != nil {
 					log.Println("Ошибка при отправке сообщения пользователю:", err)
 				}
 			}
