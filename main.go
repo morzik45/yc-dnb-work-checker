@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strconv"
 	dnb_mongo "yc-dnb-work-checker/dnb-mongo"
 	"yc-dnb-work-checker/telegram"
 )
@@ -26,13 +27,13 @@ func Handler(messages Request) (*Response, error) {
 					log.Println(err)
 					return nil, nil
 				}
-				currentUser, err := db.GetUser(w.WID, w.Token)
+				currentUser, err := db.GetUser(strconv.Itoa(w.UID), w.Token)
 				if err != nil {
 					fmt.Println(err)
 					return nil, nil
 				}
 
-				if telegram.SendMessage(w.UID, w.Token, fmt.Sprintf("Фото добавлено в очередь %s, %d", currentUser.User.Username, currentUser.Counts.Coins)) != nil {
+				if telegram.SendMessage(strconv.Itoa(w.UID), w.Token, fmt.Sprintf("Фото добавлено в очередь %s, %d", currentUser.User.Username, currentUser.Counts.Coins)) != nil {
 					log.Println("Ошибка при отправке сообщения пользователю:", err)
 				}
 			}

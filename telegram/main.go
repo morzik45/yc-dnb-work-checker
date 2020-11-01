@@ -7,13 +7,13 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"strconv"
 	logger "yc-dnb-work-checker/dnb-logging"
 )
 
 func GetChatMember(userID, token string) (User, error) {
 	tr := new(ChatMemberResponse)
 	url := fmt.Sprintf("https://api.telegram.org/bot%s/getChatMember", token)
+	fmt.Println(userID, token)
 	requestBody, err := json.Marshal(map[string]string{
 		"chat_id": userID,
 		"user_id": userID,
@@ -42,11 +42,11 @@ func GetChatMember(userID, token string) (User, error) {
 	return tr.Result.User, nil
 }
 
-func SendMessage(userID int, token, text string) error {
+func SendMessage(userID, token, text string) error {
 	url := fmt.Sprintf("https://api.telegram.org/bot%s/sendMessage", token)
 	fmt.Println(userID, token, text)
 	requestBody, err := json.Marshal(map[string]string{
-		"chat_id":    strconv.Itoa(userID),
+		"chat_id":    userID,
 		"text":       text,
 		"parse_mode": "HTML",
 	})
