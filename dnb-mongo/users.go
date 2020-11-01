@@ -90,22 +90,9 @@ func (m *UserDB) CreateUser(ctx context.Context) (*TGUser, error) {
 	return newUser, nil
 }
 
-func (m *UserDB) CountInc(ctx context.Context, key string, value int) (*TGUser, error) {
+func (m *UserDB) Update(ctx context.Context, update bson.D) (*TGUser, error) {
 	userID := ctx.Value("userID").(string)
 	filter := bson.D{primitive.E{Key: "_id", Value: userID}}
-	update := bson.D{
-		primitive.E{
-			Key: "$currentDate",
-			Value: bson.D{
-				primitive.E{
-					Key:   "datetimes.last_visit",
-					Value: true}}},
-		primitive.E{
-			Key: "$inc",
-			Value: bson.D{primitive.E{
-				Key:   key,
-				Value: value,
-			}}}}
 	var result *TGUser
 	err := m.FindOneAndUpdate(ctx, filter, update).Decode(&result)
 	return result, err

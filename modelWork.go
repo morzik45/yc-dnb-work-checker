@@ -7,6 +7,8 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sqs"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"strconv"
 	"time"
 	dnb_mongo "yc-dnb-work-checker/dnb-mongo"
@@ -65,25 +67,86 @@ func (w *Work) SetStatus() error {
 	if err != nil {
 		return err
 	}
+
 	if currentUser.Status.IsAdmin { // Если админ
 		w.WorkStatus = 3
+
 	} else if currentUser.User.Bonus &&
 		currentUser.DateTimes.BonusDatetime.After(time.Now().UTC()) &&
 		currentUser.Counts.BonusCoins > 0 { // VIP за бонусные монеты
-		_, err := db.CountInc(ctx, "counts.bonus_coins", -1)
+		update := bson.D{
+			primitive.E{
+				Key: "$inc",
+				Value: bson.D{primitive.E{
+					Key:   "counts.bonus_coins",
+					Value: -1,
+				}}},
+			primitive.E{
+				Key:   "counts.count_vip",
+				Value: 1,
+			}}
+		_, err := db.Update(ctx, update)
 		if err != nil {
 			return err
 		}
 		w.WorkStatus = 2
+
 	} else if currentUser.Counts.Coins > 0 { // VIP
-		_, err := db.CountInc(ctx, "counts.coins", -1)
+		update := bson.D{
+			primitive.E{
+				Key: "$inc",
+				Value: bson.D{primitive.E{
+					Key:   "counts.coins",
+					Value: -1,
+				}}},
+			primitive.E{
+				Key:   "counts.count_vip",
+				Value: 1,
+			}}
+		_, err := db.Update(ctx, update)
 		if err != nil {
 			return err
 		}
 		w.WorkStatus = 1
+
 	} else { // Бесплатная
-		w.WorkStatus = 0
+		t := time.Now().UTC()
+		rounded := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
+		c, err := wdb.CountDocuments(ctx, bson.D{
+			primitive.E{
+				Key:   "user_id",
+				Value: strconv.Itoa(w.UID),
+			},
+			primitive.E{
+				Key: "$gte",
+				Value: primitive.E{
+					Key:   "time",
+					Value: rounded,
+				},
+			},
+		})
+		if err != nil {
+			return err
+		}
+		if c < 3 {
+			w.WorkStatus = 0
+			update := bson.D{
+				primitive.E{
+					Key:   "counts.count_free",
+					Value: 1,
+				}}
+			_, err := db.Update(ctx, update)
+			if err != nil {
+				return err
+			}
+		}
 	}
-	wdb.InsertWork(ctx, w.WorkStatus)
+
+	if w.WorkStatus != -1 {
+		err = wdb.InsertWork(ctx, w.WorkStatus)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }

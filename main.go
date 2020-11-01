@@ -18,11 +18,17 @@ func Handler(messages Request) (*Response, error) {
 		if w.SetStatus() != nil {
 			log.Println("Ошибка при установке статуса:", err)
 		} else {
-			if w.AddNewWorkToQueue() != nil {
-				log.Println("Ошибка при добавлении в очередь:", err)
-			} else {
+			if w.WorkStatus != -1 {
+				if w.AddNewWorkToQueue() != nil {
+					log.Println("Ошибка при добавлении в очередь:", err)
+				} else {
 
-				if telegram.SendMessage(strconv.Itoa(w.UID), w.Token, fmt.Sprintf("Фото добавлено в очередь")) != nil {
+					if telegram.SendMessage(strconv.Itoa(w.UID), w.Token, fmt.Sprintf("Фото добавлено в очередь")) != nil {
+						log.Println("Ошибка при отправке сообщения пользователю:", err)
+					}
+				}
+			} else {
+				if telegram.SendMessage(strconv.Itoa(w.UID), w.Token, fmt.Sprintf("Исчерпан лимит на сутки")) != nil {
 					log.Println("Ошибка при отправке сообщения пользователю:", err)
 				}
 			}
