@@ -122,9 +122,13 @@ func (w *Work) SetStatus() error {
 				Value: strconv.Itoa(w.UID),
 			},
 			primitive.E{
-				Key: "$gte",
+				Key:   "status",
+				Value: 0,
+			},
+			primitive.E{
+				Key: "time",
 				Value: primitive.E{
-					Key:   "time",
+					Key:   "$gt",
 					Value: rounded,
 				},
 			},
