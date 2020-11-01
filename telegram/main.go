@@ -44,6 +44,7 @@ func GetChatMember(userID, token string) (User, error) {
 
 func SendMessage(userID int, token, text string) error {
 	url := fmt.Sprintf("https://api.telegram.org/bot%s/sendMessage", token)
+	fmt.Println(userID, token, text)
 	requestBody, err := json.Marshal(map[string]string{
 		"chat_id":    strconv.Itoa(userID),
 		"text":       text,
