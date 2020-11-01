@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sqs"
@@ -114,8 +115,8 @@ func (w *Work) SetStatus() error {
 		w.WorkStatus = 1
 
 	} else { // Бесплатная
-		//t := time.Now().UTC()
-		//rounded := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
+		t := time.Now().UTC()
+		rounded := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
 		c, err := wdb.CountDocuments(ctx, bson.D{
 			primitive.E{
 				Key:   "user_id",
@@ -125,19 +126,22 @@ func (w *Work) SetStatus() error {
 				Key:   "status",
 				Value: 0,
 			},
-			//primitive.E{
-			//	Key: "time",
-			//	Value: primitive.E{
-			//		Key:   "$gt",
-			//		Value: rounded,
-			//	},
-			//},
+			primitive.E{
+				Key: "time",
+				Value: primitive.E{
+					Key:   "$gt",
+					Value: rounded,
+				},
+			},
 		})
 		if err != nil {
+			fmt.Println("err1")
 			return err
 		}
+		fmt.Println(c)
 		if c < 3 {
 			w.WorkStatus = 0
+			fmt.Println(0)
 			update := bson.D{
 				primitive.E{
 					Key:   "counts.count_free",
@@ -145,6 +149,7 @@ func (w *Work) SetStatus() error {
 				}}
 			_, err := db.Update(ctx, update)
 			if err != nil {
+				fmt.Println("err2")
 				return err
 			}
 		}
