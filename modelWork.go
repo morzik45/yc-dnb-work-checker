@@ -1,11 +1,15 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sqs"
+	"strconv"
+	"time"
+	dnb_mongo "yc-dnb-work-checker/dnb-mongo"
 )
 
 type Work struct {
@@ -44,8 +48,42 @@ func (w *Work) AddNewWorkToQueue() error {
 }
 
 func (w *Work) SetStatus() error {
-	// TODO: Имплементировать выбор и установку статуса и обновление счётчиков
-	w.WorkStatus = 2
-	w.WorkType = 0
+	w.WorkType = 0    // Работа из TG
+	w.WorkStatus = -1 // Изначально отказ
+	var ctx = context.Background()
+	ctx = context.WithValue(ctx, "userID", strconv.Itoa(w.UID))
+	ctx = context.WithValue(ctx, "token", w.Token)
+	db, err := dnb_mongo.NewUserDB(ctx)
+	if err != nil {
+		return err
+	}
+	wdb, err := dnb_mongo.NewStatisticDB(ctx)
+	if err != nil {
+		return err
+	}
+	currentUser, err := db.GetUser(ctx)
+	if err != nil {
+		return err
+	}
+	if currentUser.Status.IsAdmin { // Если админ
+		w.WorkStatus = 3
+	} else if currentUser.User.Bonus &&
+		currentUser.DateTimes.BonusDatetime.After(time.Now().UTC()) &&
+		currentUser.Counts.BonusCoins > 0 { // VIP за бонусные монеты
+		_, err := db.CountInc(ctx, "counts.bonus_coins", -1)
+		if err != nil {
+			return err
+		}
+		w.WorkStatus = 2
+	} else if currentUser.Counts.Coins > 0 { // VIP
+		_, err := db.CountInc(ctx, "counts.coins", -1)
+		if err != nil {
+			return err
+		}
+		w.WorkStatus = 1
+	} else { // Бесплатная
+		w.WorkStatus = 0
+	}
+	wdb.InsertWork(ctx, w.WorkStatus)
 	return nil
 }
