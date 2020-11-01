@@ -77,13 +77,15 @@ func (w *Work) SetStatus() error {
 		update := bson.D{
 			primitive.E{
 				Key: "$inc",
-				Value: bson.D{primitive.E{
-					Key:   "counts.bonus_coins",
-					Value: -1,
-				}}},
-			primitive.E{
-				Key:   "counts.count_vip",
-				Value: 1,
+				Value: bson.D{
+					primitive.E{
+						Key:   "counts.bonus_coins",
+						Value: -1,
+					},
+					primitive.E{
+						Key:   "counts.count_vip",
+						Value: 1,
+					}},
 			}}
 		_, err := db.Update(ctx, update)
 		if err != nil {
@@ -95,13 +97,15 @@ func (w *Work) SetStatus() error {
 		update := bson.D{
 			primitive.E{
 				Key: "$inc",
-				Value: bson.D{primitive.E{
-					Key:   "counts.coins",
-					Value: -1,
-				}}},
-			primitive.E{
-				Key:   "counts.count_vip",
-				Value: 1,
+				Value: bson.D{
+					primitive.E{
+						Key:   "counts.coins",
+						Value: -1,
+					},
+					primitive.E{
+						Key:   "counts.count_vip",
+						Value: 1,
+					}},
 			}}
 		_, err := db.Update(ctx, update)
 		if err != nil {
