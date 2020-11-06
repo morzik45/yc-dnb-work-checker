@@ -69,8 +69,11 @@ func (w *Work) SetStatus() error {
 		return err
 	}
 
-	yaDB := dnb_ydb.NewDB()
-	defer yaDB.Close()
+	ydbc := make(chan *dnb_ydb.DB)
+
+	go func(c chan *dnb_ydb.DB) {
+		c <- dnb_ydb.NewDB()
+	}(ydbc)
 
 	currentUser, err := db.GetUser(ctx)
 	if err != nil {
@@ -194,6 +197,9 @@ VALUES
     CurrentUtcDatetime(),
     $status
 );`, dnb_ydb.Database)
+
+		yaDB := <-ydbc
+		defer yaDB.Close()
 
 		err := table.Retry(yaDB.Ctx, yaDB.SessionPool,
 			table.OperationFunc(func(ctx context.Context, s *table.Session) (err error) {
