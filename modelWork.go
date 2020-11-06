@@ -4,14 +4,19 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sqs"
+	"github.com/yandex-cloud/ydb-go-sdk"
+	"github.com/yandex-cloud/ydb-go-sdk/table"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"log"
 	"strconv"
 	"time"
 	dnb_mongo "yc-dnb-work-checker/dnb-mongo"
+	dnb_ydb "yc-dnb-work-checker/dnb-ydb"
 )
 
 type Work struct {
@@ -63,6 +68,10 @@ func (w *Work) SetStatus() error {
 	if err != nil {
 		return err
 	}
+
+	yaDB := dnb_ydb.NewDB()
+	defer yaDB.Close()
+
 	currentUser, err := db.GetUser(ctx)
 	if err != nil {
 		return err
@@ -160,6 +169,46 @@ func (w *Work) SetStatus() error {
 		err = wdb.InsertWork(ctx, w.WorkStatus)
 		if err != nil {
 			return err
+		}
+
+		readTx := table.TxControl(
+			table.BeginTx(
+				table.WithSerializableReadWrite(),
+			),
+			table.CommitTx(),
+		)
+
+		query := fmt.Sprintf(`
+PRAGMA TablePathPrefix("%s");
+DECLARE $user_id AS Utf8;
+DECLARE $status AS Uint8;
+INSERT INTO works
+(
+    user_id,
+    time,
+    status
+)
+VALUES
+(
+    $user_id,
+    CurrentUtcDatetime(),
+    $status
+);`, dnb_ydb.Database)
+
+		err := table.Retry(yaDB.Ctx, yaDB.SessionPool,
+			table.OperationFunc(func(ctx context.Context, s *table.Session) (err error) {
+				_, _, err = s.Execute(ctx,
+					readTx,
+					query,
+					table.NewQueryParameters(
+						table.ValueParam("$user_id", ydb.UTF8Value(strconv.Itoa(w.UID))),
+						table.ValueParam("$status", ydb.Uint8Value(uint8(w.WorkStatus))),
+					),
+				)
+				return
+			}))
+		if err != nil {
+			log.Fatal(err)
 		}
 	}
 	return nil
