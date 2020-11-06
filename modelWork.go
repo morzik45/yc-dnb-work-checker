@@ -182,7 +182,7 @@ func (w *Work) SetStatus() error {
 PRAGMA TablePathPrefix("%s");
 DECLARE $user_id AS Utf8;
 DECLARE $status AS Uint8;
-INSERT INTO works
+UPSERT INTO works
 (
     user_id,
     time,
