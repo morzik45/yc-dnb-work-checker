@@ -16,7 +16,7 @@ jobs:
           function_id: ${{ secrets.FUNCTION_ID }}
           runtime: 'golang114'
           entrypoint: 'main.Handler'
-          environment: DEBUG=false,QUEUE_URL=${{ secrets.QUEUE_URL }},AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }},AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }},DB_NAME=${{ secrets.DB_NAME }},MONGO_URI=${{ secrets.MONGO_URI }},YDB_PRIVATE_KEY=${{ secrets.YDB_PRIVATE_KEY }},YDB_KEYID=${{ secrtes.YDB_KEYID }},YDB_ISSUER=${{ secrets.YDB_ISSUER }},YDB_ADDR=${{ secrets.YDB_ADDR }},YDB_DATABASE=${{ secrets.YDB_DATABASE }}
+          environment: DEBUG=false,QUEUE_URL=${{ secrets.QUEUE_URL }},AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }},AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }},DB_NAME=${{ secrets.DB_NAME }},MONGO_URI=${{ secrets.MONGO_URI }},YDB_PRIVATE_KEY=${{ secrets.YDB_PRIVATE_KEY }},YDB_KEYID=${{ secretes.YDB_KEYID }},YDB_ISSUER=${{ secrets.YDB_ISSUER }},YDB_ADDR=${{ secrets.YDB_ADDR }},YDB_DATABASE=${{ secrets.YDB_DATABASE }}
           memory: '128'
           execution_timeout: '3'
           service_account: ${{ secrets.SERVICE_ACCOUNT }}
