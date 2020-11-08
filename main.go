@@ -16,7 +16,7 @@ func Handler(messages Request) (*Response, error) {
 			log.Println("Ошибка при разборе входящих данных:", err)
 		}
 		if w.SetStatus() != nil {
-			log.Println("Ошибка при установке статуса:", err)
+			log.Println("Ошибка при установке статуса:", err.Error())
 		} else {
 			if w.WorkStatus != -1 {
 				if w.AddNewWorkToQueue() != nil {
