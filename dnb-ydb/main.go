@@ -144,7 +144,6 @@ func (db *DB) SetWorkStatus(userID uint64, token string) (workStatus, count int,
 		table.BeginTx(
 			table.WithSerializableReadWrite(),
 		),
-		table.CommitTx(),
 	)
 
 	err = table.Retry(db.Ctx, db.SessionPool,
@@ -209,6 +208,7 @@ func (db *DB) SetWorkStatus(userID uint64, token string) (workStatus, count int,
 				user.BannedDatetime = time.Unix(0, int64(res.OTimestamp())*int64(time.Microsecond))
 
 			}
+
 			var updateUserQuery string
 
 			switch {
