@@ -267,7 +267,7 @@ func (db *DB) SetWorkStatus(userID uint64, token string) (workStatus, count int,
 				if resC.NextSet() && resC.NextRow() && resC.NextItem() {
 					workCount = resC.Uint64()
 				}
-				count = int(workCount)
+				count = 3 - 1 - int(workCount)
 
 				if workCount < 3 {
 					if user.UserID == 0 {
