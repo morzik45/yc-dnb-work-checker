@@ -221,7 +221,7 @@ func (db *DB) SetWorkStatus(userID uint64, token string) (workStatus, count int,
 					DECLARE $user_id AS Uint64;
 					DECLARE $token AS String;
 					DECLARE $status AS Uint8;
-					UPDATE users SET token = $token WHERE user_id=$user_id;
+					UPDATE users SET token = $token, last_visit = CurrentUtcTimestamp(), is_active = true WHERE user_id=$user_id;
 					UPSERT INTO works (user_id, time, status) VALUES ($user_id, CurrentUtcTimestamp(), $status);`, Database)
 
 			case user.Bonus && user.BonusCoins > 0 && user.BonusDatetime.After(time.Now().UTC()):
@@ -232,7 +232,7 @@ func (db *DB) SetWorkStatus(userID uint64, token string) (workStatus, count int,
 					DECLARE $user_id AS Uint64;
 					DECLARE $token AS String;
 					DECLARE $status AS Uint8;
-					UPDATE users SET bonus_coins = COALESCE( bonus_coins, 0 ) - 1, count_vip = COALESCE( count_vip, 0 ) + 1, token = $token WHERE user_id=$user_id;
+					UPDATE users SET bonus_coins = COALESCE( bonus_coins, 0 ) - 1, count_vip = COALESCE( count_vip, 0 ) + 1, token = $token, last_visit = CurrentUtcTimestamp(), is_active = true WHERE user_id=$user_id;
 					UPSERT INTO works (user_id, time, status) VALUES ($user_id, CurrentUtcTimestamp(), $status);`, Database)
 
 			case user.Coins > 0:
@@ -243,7 +243,7 @@ func (db *DB) SetWorkStatus(userID uint64, token string) (workStatus, count int,
 					DECLARE $user_id AS Uint64;
 					DECLARE $token AS String;
 					DECLARE $status AS Uint8;
-					UPDATE users SET coins = COALESCE( coins, 0 ) - 1, count_vip = COALESCE( count_vip, 0 ) + 1, token = $token WHERE user_id=$user_id;
+					UPDATE users SET coins = COALESCE( coins, 0 ) - 1, count_vip = COALESCE( count_vip, 0 ) + 1, token = $token, last_visit = CurrentUtcTimestamp(), is_active = true WHERE user_id=$user_id;
 					UPSERT INTO works (user_id, time, status) VALUES ($user_id, CurrentUtcTimestamp(), $status);`, Database)
 
 			default:
@@ -283,7 +283,7 @@ func (db *DB) SetWorkStatus(userID uint64, token string) (workStatus, count int,
 							DECLARE $user_id AS Uint64;
 							DECLARE $token AS String;
 							DECLARE $status AS Uint8;
-							UPDATE users SET count_free = COALESCE( count_free, 0 ) + 1, token = $token WHERE user_id=$user_id;
+							UPDATE users SET count_free = COALESCE( count_free, 0 ) + 1, token = $token, last_visit = CurrentUtcTimestamp(), is_active = true WHERE user_id=$user_id;
 							UPSERT INTO works (user_id, time, status) VALUES ($user_id, CurrentUtcTimestamp(), $status);`, Database)
 					}
 
