@@ -139,7 +139,7 @@ func getPrivateKey() (key *rsa.PrivateKey, err error) {
 	return
 }
 
-func (db *DB) SetWorkStatus(userID uint64, token string) (workStatus uint8, count int, err error) {
+func (db *DB) SetWorkStatus(userID uint64, token string) (workStatus, count int, err error) {
 
 	readTx := table.TxControl(
 		table.BeginTx(
@@ -261,7 +261,7 @@ func (db *DB) SetWorkStatus(userID uint64, token string) (workStatus uint8, coun
 				if resC.NextSet() && resC.NextRow() && resC.NextItem() {
 					workCount = res.Uint64()
 				}
-				count = 3 - int(workCount) - 1
+				count = int(workCount)
 
 				if workCount < 3 {
 					updateUserQuery = fmt.Sprintf(`
@@ -271,18 +271,22 @@ func (db *DB) SetWorkStatus(userID uint64, token string) (workStatus uint8, coun
 					DECLARE $status AS Uint8;
 					UPDATE users SET count_free = COALESCE( count_free, 0 ) + 1, token = $token WHERE user_id=$user_id;
 					UPSERT INTO works (user_id, time, status) VALUES ($user_id, CurrentUtcTimestamp(), $status);`, Database)
+				} else {
+					workStatus = -1
 				}
 			}
-			_, err = t.Execute(
-				ctx,
-				updateUserQuery,
-				table.NewQueryParameters(
-					table.ValueParam("$user_id", ydb.Uint64Value(userID)),
-					table.ValueParam("$token", ydb.StringValue([]byte(token))),
-					table.ValueParam("$status", ydb.Uint8Value(workStatus)),
-				))
-			if err != nil {
-				return err
+			if workStatus != -1 {
+				_, err = t.Execute(
+					ctx,
+					updateUserQuery,
+					table.NewQueryParameters(
+						table.ValueParam("$user_id", ydb.Uint64Value(userID)),
+						table.ValueParam("$token", ydb.StringValue([]byte(token))),
+						table.ValueParam("$status", ydb.Uint8Value(uint8(workStatus))),
+					))
+				if err != nil {
+					return err
+				}
 			}
 			err = t.Commit(ctx)
 			return err

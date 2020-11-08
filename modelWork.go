@@ -59,10 +59,6 @@ func (w *Work) SetStatus() error {
 
 	w.WorkType = 0
 	w.WorkStatus = int(ws)
-	err = w.AddNewWorkToQueue()
-	if err != nil {
-		return err
-	}
 
 	err = telegram.SendMessage(strconv.Itoa(w.UID), w.Token, fmt.Sprintf("%d", c))
 	if err != nil {
