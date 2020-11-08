@@ -1,18 +1,15 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sqs"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"strconv"
-	"time"
-	dnb_mongo "yc-dnb-work-checker/dnb-mongo"
 	dnb_ydb "yc-dnb-work-checker/dnb-ydb"
+	"yc-dnb-work-checker/telegram"
 )
 
 type Work struct {
@@ -52,105 +49,25 @@ func (w *Work) AddNewWorkToQueue() error {
 
 func (w *Work) SetStatus() error {
 
-	ydbc := make(chan *dnb_ydb.DB)
-	go func(c chan *dnb_ydb.DB) {
-		c <- dnb_ydb.NewDB()
-	}(ydbc)
-
-	w.WorkType = 0    // Работа из TG
-	w.WorkStatus = -1 // Изначально отказ
-	var ctx = context.Background()
-	ctx = context.WithValue(ctx, "userID", strconv.Itoa(w.UID))
-	ctx = context.WithValue(ctx, "token", w.Token)
-	db, err := dnb_mongo.NewUserDB(ctx)
-	if err != nil {
-		return err
-	}
-
-	currentUser, err := db.GetUser(ctx)
-	if err != nil {
-		return err
-	}
-
-	yaDB := <-ydbc
+	yaDB := dnb_ydb.NewDB()
 	defer yaDB.Close()
 
-	if currentUser.Status.IsAdmin { // Если админ
-		w.WorkStatus = 3
-
-	} else if currentUser.User.Bonus &&
-		currentUser.DateTimes.BonusDatetime.After(time.Now().UTC()) &&
-		currentUser.Counts.BonusCoins > 0 { // VIP за бонусные монеты
-		update := bson.D{
-			primitive.E{
-				Key: "$inc",
-				Value: bson.D{
-					primitive.E{
-						Key:   "counts.bonus_coins",
-						Value: -1,
-					},
-					primitive.E{
-						Key:   "counts.count_vip",
-						Value: 1,
-					}},
-			}}
-		_, err := db.Update(ctx, update)
-		if err != nil {
-			return err
-		}
-		w.WorkStatus = 2
-
-	} else if currentUser.Counts.Coins > 0 { // VIP
-		update := bson.D{
-			primitive.E{
-				Key: "$inc",
-				Value: bson.D{
-					primitive.E{
-						Key:   "counts.coins",
-						Value: -1,
-					},
-					primitive.E{
-						Key:   "counts.count_vip",
-						Value: 1,
-					}},
-			}}
-		_, err := db.Update(ctx, update)
-		if err != nil {
-			return err
-		}
-		w.WorkStatus = 1
-
-	} else { // Бесплатная
-
-		c, err := yaDB.CountFreeWorkFromCurrentDay(uint64(w.UID))
-		if err != nil {
-			return err
-		}
-
-		if c < 3 {
-			w.WorkStatus = 0
-			update := bson.D{
-				primitive.E{
-					Key: "$inc",
-					Value: bson.D{
-						primitive.E{
-							Key:   "counts.count_free",
-							Value: 1,
-						}},
-				}}
-			_, err := db.Update(ctx, update)
-			if err != nil {
-				return err
-			}
-		}
+	ws, c, err := yaDB.SetWorkStatus(uint64(w.UID), w.Token)
+	if err != nil {
+		return err
 	}
 
-	if w.WorkStatus != -1 {
-
-		err = yaDB.InsertWork(uint64(w.UID), uint8(w.WorkStatus))
-		if err != nil {
-			return err
-		}
+	w.WorkType = 0
+	w.WorkStatus = int(ws)
+	err = w.AddNewWorkToQueue()
+	if err != nil {
+		return err
 	}
+
+	err = telegram.SendMessage(strconv.Itoa(w.UID), w.Token, fmt.Sprintf("%d", c))
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
