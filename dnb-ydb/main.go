@@ -213,7 +213,7 @@ func (db *DB) SetWorkStatus(userID uint64, token string) (workStatus, count int,
 
 			switch {
 			case user.BannedDatetime.After(time.Now().UTC()):
-
+				workStatus = -2
 			case user.IsAdmin:
 				workStatus = 3
 				updateUserQuery = fmt.Sprintf(`
@@ -292,7 +292,7 @@ func (db *DB) SetWorkStatus(userID uint64, token string) (workStatus, count int,
 				}
 			}
 
-			if workStatus != -1 {
+			if workStatus >= 0 {
 				_, err = t.Execute(
 					ctx,
 					updateUserQuery,

@@ -32,7 +32,7 @@ func Handler(messages Request) (*Response, error) {
 	w.WorkType = 0
 	w.WorkStatus = int(ws)
 
-	if w.WorkStatus != -1 {
+	if w.WorkStatus >= 0 {
 		err = w.AddNewWorkToQueue()
 	}
 	if err != nil {
@@ -41,6 +41,8 @@ func Handler(messages Request) (*Response, error) {
 
 	var text string
 	switch w.WorkStatus {
+	case -2:
+		text = "Вам ограничен доступ к боту!"
 	case -1:
 		text = "Исчерпан лимит обработок на сутки!"
 	case 0:
