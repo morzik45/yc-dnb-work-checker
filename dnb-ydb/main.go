@@ -176,8 +176,11 @@ func (db *DB) SetWorkStatus(userID uint64, token string) (workStatus, count int,
 					table.ValueParam("$user_id", ydb.Uint64Value(userID)),
 				),
 			)
-			if err != nil || res.Err() != nil {
+			if err != nil {
 				return err
+			}
+			if res.Err() != nil {
+				return res.Err()
 			}
 			if res.NextSet() && res.NextRow() {
 
@@ -288,6 +291,7 @@ func (db *DB) SetWorkStatus(userID uint64, token string) (workStatus, count int,
 					workStatus = -1
 				}
 			}
+
 			if workStatus != -1 {
 				_, err = t.Execute(
 					ctx,
