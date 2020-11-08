@@ -6,7 +6,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
-	"errors"
 	"fmt"
 	"github.com/yandex-cloud/ydb-go-sdk"
 	"github.com/yandex-cloud/ydb-go-sdk/auth/iam"
@@ -181,53 +180,32 @@ func (db *DB) SetWorkStatus(userID uint64, token string) (workStatus, count int,
 				return err
 			}
 			if res.NextSet() && res.NextRow() {
-				if res.NextItem() {
-					user.UserID = res.OUint64()
-				} else {
-					return errors.New("что то не так в запросе пользователя")
-				}
-				if user.UserID != userID {
-					return errors.New("user.UserID != userID")
-				}
-				if res.NextItem() {
-					user.IsAdmin = res.OBool()
-				} else {
-					return errors.New("что то не так в запросе пользователя")
-				}
-				if res.NextItem() {
-					user.Lang = string(res.OString())
-				} else {
-					return errors.New("что то не так в запросе пользователя")
-				}
-				if res.NextItem() {
-					user.Coins = int(res.OUint64())
-				} else {
-					return errors.New("что то не так в запросе пользователя")
-				}
-				if res.NextItem() {
-					user.Bonus = res.OBool()
-				} else {
-					return errors.New("что то не так в запросе пользователя")
-				}
-				if res.NextItem() {
-					user.BonusDatetime = time.Unix(0, int64(res.OTimestamp())*int64(time.Microsecond))
-				} else {
-					return errors.New("что то не так в запросе пользователя")
-				}
-				if res.NextItem() {
-					user.BonusCoins = int(res.OUint64())
-				} else {
-					return errors.New("что то не так в запросе пользователя")
-				}
-				if res.NextItem() {
-					user.BannedDatetime = time.Unix(0, int64(res.OTimestamp())*int64(time.Microsecond))
-				} else {
-					return errors.New("что то не так в запросе пользователя")
-				}
-			} else {
-				return errors.New("что то не так в запросе пользователя")
-			}
 
+				res.NextItem()
+				user.UserID = res.OUint64()
+
+				res.NextItem()
+				user.IsAdmin = res.OBool()
+
+				res.NextItem()
+				user.Lang = string(res.OString())
+
+				res.NextItem()
+				user.Coins = int(res.OUint64())
+
+				res.NextItem()
+				user.Bonus = res.OBool()
+
+				res.NextItem()
+				user.BonusDatetime = time.Unix(0, int64(res.OTimestamp())*int64(time.Microsecond))
+
+				res.NextItem()
+				user.BonusCoins = int(res.OUint64())
+
+				res.NextItem()
+				user.BannedDatetime = time.Unix(0, int64(res.OTimestamp())*int64(time.Microsecond))
+
+			}
 			var updateUserQuery string
 
 			switch {
@@ -289,13 +267,23 @@ func (db *DB) SetWorkStatus(userID uint64, token string) (workStatus, count int,
 				count = int(workCount)
 
 				if workCount < 3 {
-					updateUserQuery = fmt.Sprintf(`
-					PRAGMA TablePathPrefix("%s");
-					DECLARE $user_id AS Uint64;
-					DECLARE $token AS String;
-					DECLARE $status AS Uint8;
-					UPDATE users SET count_free = COALESCE( count_free, 0 ) + 1, token = $token WHERE user_id=$user_id;
-					UPSERT INTO works (user_id, time, status) VALUES ($user_id, CurrentUtcTimestamp(), $status);`, Database)
+					if user.UserID == 0 {
+						updateUserQuery = fmt.Sprintf(`
+							PRAGMA TablePathPrefix("%s");
+							DECLARE $user_id AS Uint64;
+							DECLARE $token AS String;
+							DECLARE $status AS Uint8;
+							UPSERT INTO works (user_id, time, status) VALUES ($user_id, CurrentUtcTimestamp(), $status);`, Database)
+					} else {
+						updateUserQuery = fmt.Sprintf(`
+							PRAGMA TablePathPrefix("%s");
+							DECLARE $user_id AS Uint64;
+							DECLARE $token AS String;
+							DECLARE $status AS Uint8;
+							UPDATE users SET count_free = COALESCE( count_free, 0 ) + 1, token = $token WHERE user_id=$user_id;
+							UPSERT INTO works (user_id, time, status) VALUES ($user_id, CurrentUtcTimestamp(), $status);`, Database)
+					}
+
 				} else {
 					workStatus = -1
 				}
