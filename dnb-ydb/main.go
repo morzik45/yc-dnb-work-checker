@@ -179,6 +179,9 @@ func (db *DB) SetWorkStatus(userID uint64, token string) (workStatus, count int,
 			if err != nil || res.Err() != nil {
 				return err
 			}
+			if !res.HasItems() {
+				return errors.New("no users")
+			}
 			for res.NextSet() {
 				for res.NextRow() {
 					res.NextItem()
